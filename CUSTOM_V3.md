@@ -1,4 +1,4 @@
-# TimTool 3.3 custom v3.2
+# TimTool 3.3 custom v3.3
 
 This fork is based on TimTool 3.3 and adds a card-to-app action inspired by
 [QAuxiliary](https://github.com/cinit/QAuxiliary). It is a custom build, not an
@@ -20,7 +20,9 @@ official TimTool release.
   are retained. **强制平板模式** may require signing in again.
 - Removes module update checks, update dialogs, and the online update log entry.
   This custom version has no donation entry or donation calls.
-- Displays module version `3.3-custom-v3.2` (`versionCode` 36).
+- Removes the GitHub title, version text, and Telegram icon from the TIM settings
+  dialog, leaving the feature categories and switches.
+- Displays module version `3.3-custom-v3.3` (`versionCode` 37).
 
 Build the module with `gradlew :app:assembleDebug` using the Android SDK required
 by this project. The TIM 4.1.0 APK with an embedded module is distributed

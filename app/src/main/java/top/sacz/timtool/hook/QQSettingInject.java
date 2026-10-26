@@ -163,7 +163,7 @@ public class QQSettingInject extends BaseHookItem {
             }
             if (isEnterModuleActivity) {
                 XpHelper.injectResourcesToContext(qSettingActivity);
-                new SettingDialog().show(qSettingActivity);
+                new SettingDialog().show();
             }
             return null;
         }

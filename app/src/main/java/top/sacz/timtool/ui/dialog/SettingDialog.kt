@@ -1,9 +1,6 @@
 package top.sacz.timtool.ui.dialog
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -12,9 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.kongzue.dialogx.dialogs.MessageDialog
 import com.kongzue.dialogx.interfaces.OnBindView
 import com.kongzue.dialogx.util.FixContextUtil
-import top.sacz.timtool.BuildConfig
 import top.sacz.timtool.R
-import top.sacz.timtool.hook.HookEnv
 import top.sacz.timtool.ui.adapter.CategoryAdapter
 import top.sacz.timtool.ui.adapter.SettingUIItemManger
 import top.sacz.timtool.ui.bean.Category
@@ -29,12 +24,8 @@ class SettingDialog {
 
 
     @SuppressLint("InflateParams")
-    fun show(activity: Context) {
-        val messageText = activity.getString(R.string.setting_message)
-            .format(BuildConfig.VERSION_NAME, HookEnv.getAppName(), HookEnv.getVersionName())
+    fun show() {
         dialog = MessageDialog.build()
-            .setTitleIcon(R.drawable.ic_github)
-            .setTitle(R.string.module_name)
             .setCustomView(object : OnBindView<MessageDialog>(R.layout.layout_setting) {
                 override fun onBind(
                     p0: MessageDialog,
@@ -45,35 +36,7 @@ class SettingDialog {
                     onBindView()
                 }
             })
-            .setMessage(messageText)
             .show()
-        dialog.dialogImpl.apply {
-            txtDialogTitle.setOnClickListener {
-                onGithubClick(it)
-            }
-            txtDialogTip.setOnClickListener {
-                onTelegramClick(it)
-            }
-        }
-
-    }
-
-    private fun onTelegramClick(view: View) {
-        //跳转到浏览器
-        val url = "https://t.me/timtool"
-        val intent = Intent()
-        intent.action = Intent.ACTION_VIEW
-        intent.data = Uri.parse(url)
-        view.context.startActivity(intent)
-    }
-
-    private fun onGithubClick(view: View) {
-        //跳转到浏览器
-        val url = "https://github.com/suzhelan/TimTool"
-        val intent = Intent()
-        intent.action = Intent.ACTION_VIEW
-        intent.data = Uri.parse(url)
-        view.context.startActivity(intent)
     }
 
     fun refresh() {
@@ -83,10 +46,6 @@ class SettingDialog {
     @SuppressLint("InflateParams")
     private fun onBindView() {
         val context = rootView.context
-        val ibTelegram = rootView.findViewById<View>(R.id.ib_telegram)
-        ibTelegram.setOnClickListener {
-            onTelegramClick(it)
-        }
         //提交初始的分类
         val boxView = rootView.findViewById<FrameLayout>(R.id.box_list)
         val categoryRv = FixContextUtil.getFixInflater(context)
