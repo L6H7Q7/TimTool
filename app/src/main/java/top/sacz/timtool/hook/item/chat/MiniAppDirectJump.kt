@@ -34,8 +34,15 @@ class MiniAppDirectJump : BaseSwitchFunctionHookItem(), OnMenuBuilder {
 
     private val config get() = ConfigUtils("MiniAppDirectJump")
 
+    private val oldBiliPackages =
+        "tv.danmaku.bili,com.bilibili.app.in,tv.danmaku.bilibilihd,com.bilibili.app.blue"
+    private val biliPackages =
+        "com.example.piliplus,tv.danmaku.bili,com.bilibili.app.in,tv.danmaku.bilibilihd,com.bilibili.app.blue,com.bstar.intl"
+    private val oldBiliPattern = "https?:\\\\?/\\\\?/((b23\\.tv)|([\\w.]*bilibili\\.com))[^\\\" ]*"
+    private val biliPattern = "https?:\\\\?/\\\\?/((b23\\.tv)|([\\w.]*bilibili\\.(com|tv|cn)))[^\\\" ]*"
+
     private fun defaultRules() = listOf(
-        AppRule("tv.danmaku.bili,com.bilibili.app.in,tv.danmaku.bilibilihd,com.bilibili.app.blue", "https?:\\\\?/\\\\?/((b23\\.tv)|([\\w.]*bilibili\\.com))[^\\\" ]*", true),
+        AppRule(biliPackages, biliPattern, true),
         AppRule("com.xingin.xhs", "(?<=\\\"jumpUrl\\\":\\\")https?:\\\\?/\\\\?/[^\\\"]*", false),
         AppRule("com.coolapk.market", "(?<=\\\"jumpUrl\\\":\\\")https?:\\\\?/\\\\?/[^\\\"]*", false),
         AppRule("com.zhihu.android", "(?<=\\\"jumpUrl\\\":\\\")https?:\\\\?/\\\\?/[^\\\"]*", false)
@@ -44,13 +51,21 @@ class MiniAppDirectJump : BaseSwitchFunctionHookItem(), OnMenuBuilder {
     private fun rules(): List<AppRule> {
         val stored = config.getString("rules", "")
         if (stored.isEmpty()) return defaultRules()
-        return runCatching {
+        val parsed = runCatching {
             val array = JSONArray(stored)
             (0 until array.length()).map { index ->
                 val item = array.getJSONObject(index)
                 AppRule(item.getString("packages"), item.getString("pattern"), item.optBoolean("resolveShortUrl"))
             }
         }.getOrDefault(defaultRules())
+        // Upgrade an unchanged saved v3 default without overwriting custom rules.
+        val upgraded = parsed.map { rule ->
+            if (rule.packages == oldBiliPackages && rule.pattern == oldBiliPattern) {
+                rule.copy(packages = biliPackages, pattern = biliPattern)
+            } else rule
+        }
+        if (upgraded != parsed) saveRules(upgraded)
+        return upgraded
     }
 
     private fun saveRules(rules: List<AppRule>) {
