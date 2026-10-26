@@ -3,4 +3,5 @@
     <item name="item_msg_repeat" type="id" />
     <item name="item_sticker_save" type="id" />
     <item name="item_ptt_forward" type="id" />
+    <item name="item_card_open_app" type="id" />
 </resources>

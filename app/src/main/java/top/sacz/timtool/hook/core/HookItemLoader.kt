@@ -11,17 +11,21 @@ class HookItemLoader {
      * 加载配置到对象
      */
     fun loadConfig() {
-        //读取配置 如果不存在则new一个
-        var config: Map<String, Boolean>? = ConfigUtils("item_config").getObject<Map<String, Boolean>>("item_config")
-        if (config == null) {
-            config = HashMap()
+        val store = ConfigUtils("item_config")
+        val visibleItems = HookItemFactory.getAllSwitchFunctionItemList()
+            .filter { it.path.startsWith("辅助功能/") }
+
+        // v3 首次运行时统一开启所有界面功能；之后尊重用户手动设置。
+        if (!store.getBoolean("all_visible_enabled_v3", false)) {
+            visibleItems.forEach { it.isEnabled = true }
+            saveConfig()
+            store.put("all_visible_enabled_v3", true)
+            return
         }
-        //真正去读配置到对象
-        config.forEach { (key, value) ->
-            val hookItem = HookItemFactory.findHookItemByPath(key)
-            if (hookItem != null) {
-                hookItem.isEnabled = value
-            }
+
+        val config = store.getObject<Map<String, Boolean>>("item_config").orEmpty()
+        visibleItems.forEach { item ->
+            item.isEnabled = config[item.path] ?: true
         }
     }
 
