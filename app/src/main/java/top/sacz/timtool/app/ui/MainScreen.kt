@@ -42,7 +42,6 @@ import com.kongzue.dialogx.dialogs.MessageDialog
 import com.kongzue.dialogx.util.TextInfo
 import top.sacz.timtool.BuildConfig
 import top.sacz.timtool.R
-import top.sacz.timtool.ui.dialog.UpdateLogDialog
 import top.sacz.timtool.util.TimeUtils
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
@@ -184,10 +183,6 @@ private fun LinkCard() {
             ArrowPreference(
                 title = "LSP仓库",
                 onClick = { uriHandler.openUri(REPO_URL) }
-            )
-            ArrowPreference(
-                title = "更新日志",
-                onClick = { UpdateLogDialog().show() }
             )
             ArrowPreference(
                 title = "使用教程",

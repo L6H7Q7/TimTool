@@ -11,7 +11,6 @@ import top.sacz.timtool.hook.core.HookItemLoader
 import top.sacz.timtool.hook.core.HookItemMethodFindProcessor
 import top.sacz.timtool.hook.util.PathTool
 import top.sacz.timtool.net.NewLoginTask
-import top.sacz.timtool.net.UpdateService
 import top.sacz.xphelper.XpHelper
 
 class HookSteps {
@@ -63,9 +62,6 @@ class HookSteps {
             XposedBridge.log("[Tim小助手]环境初始化完成")
             //登录
             NewLoginTask().loginAndGetUserInfoAsync()
-            //检查更新
-            val service = UpdateService()
-            service.requestUpdateAsyncAndToast()
         }
         methodFindProcessor.scanConfigMethod()
         val hookItemLoader = HookItemLoader()
