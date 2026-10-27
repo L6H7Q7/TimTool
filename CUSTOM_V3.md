@@ -1,4 +1,4 @@
-# TimTool 3.3 custom v3.7
+# TimTool 3.3 custom v3.8
 
 This fork is based on TimTool 3.3 and adds a card-to-app action inspired by
 [QAuxiliary](https://github.com/cinit/QAuxiliary). It is a custom build, not an
@@ -34,7 +34,9 @@ official TimTool release.
   below TIM's native two-row menu when necessary.
 - Removes TIM's **提醒** and **待办** long-press menu actions. The **复读** action
   remains controlled by its existing TimTool switch.
-- Displays module version `3.3-custom-v3.7` (`versionCode` 41).
+- Reuses method lookup results for the same TIM version across module updates,
+  and prevents repeated scans when an Activity resumes during lookup.
+- Displays module version `3.3-custom-v3.8` (`versionCode` 42).
 
 Build the module with `gradlew :app:assembleDebug` using the Android SDK required
 by this project. The TIM 4.1.0 APK with an embedded module is distributed
