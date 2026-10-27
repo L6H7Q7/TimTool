@@ -16,8 +16,8 @@ android {
         applicationId = BuildVersionConfig.applicationId
         minSdk = BuildVersionConfig.minSdk
         targetSdk = BuildVersionConfig.targetSdk
-        versionCode = 37
-        versionName = "3.3-custom-v3.3"
+        versionCode = 38
+        versionName = "3.3-custom-v3.4"
 
         buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
 
