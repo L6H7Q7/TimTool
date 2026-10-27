@@ -5,34 +5,36 @@ import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import de.robv.android.xposed.XC_MethodHook
 import org.json.JSONArray
 import org.json.JSONObject
-import top.sacz.timtool.R
 import top.sacz.timtool.hook.base.BaseSwitchFunctionHookItem
 import top.sacz.timtool.hook.core.annotation.HookItem
-import top.sacz.timtool.hook.item.api.OnMenuBuilder
-import top.sacz.timtool.hook.item.api.QQCustomMenu
 import top.sacz.timtool.hook.util.ToastTool
 import top.sacz.timtool.hook.util.callMethod
 import top.sacz.xphelper.util.ActivityTools
 import top.sacz.xphelper.util.ConfigUtils
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.WeakHashMap
 
-/** Long-press an Ark card and open its URL in a selected installed app. */
+/** Open a tapped Ark share card in a selected installed app. */
 @HookItem("辅助功能/聊天/小程序与分享卡片跳转App")
-class MiniAppDirectJump : BaseSwitchFunctionHookItem(), OnMenuBuilder {
+class MiniAppDirectJump : BaseSwitchFunctionHookItem() {
 
     private data class AppRule(val packages: String, val pattern: String, val resolveShortUrl: Boolean)
+    private data class TouchStart(val x: Float, val y: Float, val downTime: Long)
 
     private val config get() = ConfigUtils("MiniAppDirectJump")
+    private val cardDataByView = WeakHashMap<View, String>()
+    private val touchStarts = WeakHashMap<View, TouchStart>()
 
     private val oldBiliPackages =
         "tv.danmaku.bili,com.bilibili.app.in,tv.danmaku.bilibilihd,com.bilibili.app.blue"
@@ -77,7 +79,7 @@ class MiniAppDirectJump : BaseSwitchFunctionHookItem(), OnMenuBuilder {
         config.put("rules", array.toString())
     }
 
-    override fun getTip() = "长按卡片选“打开”；点击此项可设置应用包名与链接匹配规则"
+    override fun getTip() = "轻点分享卡片直接跳转 App；点击此项可设置包名与链接匹配规则"
 
     override fun getOnClickListener() = View.OnClickListener { view -> showSettings(view) }
 
@@ -146,47 +148,68 @@ class MiniAppDirectJump : BaseSwitchFunctionHookItem(), OnMenuBuilder {
             }.show()
     }
 
-    override fun loadHook(loader: ClassLoader) = Unit
-
-    override val targetTypes = arrayOf("com.tencent.mobileqq.aio.msglist.holder.component.ark.AIOArkContentComponent")
-
-    override fun onGetMenu(aioMsgItem: Any, targetType: String, param: XC_MethodHook.MethodHookParam) {
-        val item = QQCustomMenu.createMenuItem(aioMsgItem, "打开", R.id.item_card_open_app, android.R.drawable.ic_menu_view) {
-            val activity = ActivityTools.getTopActivity() ?: return@createMenuItem null
-            val data = runCatching { cardData(aioMsgItem) }.getOrNull()
-            if (data.isNullOrBlank()) {
-                ToastTool.show("未找到卡片链接")
-            } else {
-                openCard(activity, data)
+    override fun loadHook(loader: ClassLoader) {
+        val componentClass = loader.loadClass(
+            "com.tencent.mobileqq.aio.msglist.holder.component.ark.AIOArkContentComponent"
+        )
+        val arkViewClass = loader.loadClass(
+            "com.tencent.mobileqq.aio.msglist.holder.component.ark.view.ArkAppView"
+        )
+        val arkViewField = componentClass.getDeclaredField("H").apply { isAccessible = true }
+        val bindCard = componentClass.declaredMethods.first {
+            it.name == "C2" && it.parameterTypes.size == 4
+        }
+        hookAfter(bindCard) { param ->
+            val cardView = arkViewField.get(param.thisObject) as? View ?: return@hookAfter
+            val element = param.args[1]
+            val data = runCatching {
+                element.callMethod<Any>("getArkElement").callMethod<String>("getBytesData")
+            }.getOrNull()
+            cardDataByView.remove(cardView)
+            if (!data.isNullOrBlank()) cardDataByView[cardView] = data
+        }
+        hookBefore(arkViewClass.getDeclaredMethod(
+            "onTouch", View::class.java, MotionEvent::class.java
+        )) { param ->
+            val cardView = param.thisObject as View
+            val event = param.args[1] as MotionEvent
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> touchStarts[cardView] = TouchStart(event.x, event.y, event.downTime)
+                MotionEvent.ACTION_MOVE -> {
+                    val start = touchStarts[cardView] ?: return@hookBefore
+                    val slop = ViewConfiguration.get(cardView.context).scaledTouchSlop
+                    if (kotlin.math.abs(event.x - start.x) > slop ||
+                        kotlin.math.abs(event.y - start.y) > slop
+                    ) touchStarts.remove(cardView)
+                }
+                MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_CANCEL -> touchStarts.remove(cardView)
+                MotionEvent.ACTION_UP -> {
+                    val start = touchStarts.remove(cardView) ?: return@hookBefore
+                    val slop = ViewConfiguration.get(cardView.context).scaledTouchSlop
+                    if (event.downTime != start.downTime ||
+                        kotlin.math.abs(event.x - start.x) > slop ||
+                        kotlin.math.abs(event.y - start.y) > slop ||
+                        event.eventTime - start.downTime >= ViewConfiguration.getLongPressTimeout()
+                    ) return@hookBefore
+                    val data = cardDataByView[cardView] ?: return@hookBefore
+                    val matches = matchingRules(data)
+                    if (matches.isEmpty()) return@hookBefore
+                    val activity = ActivityTools.getTopActivity() ?: return@hookBefore
+                    openCard(activity, matches)
+                    param.result = true
+                }
             }
-            null
         }
-        param.result = listOf(item) + (param.result as List<*>)
     }
 
-    private fun cardData(aioMsgItem: Any): String? {
-        val record = aioMsgItem.callMethod<Any>("getMsgRecord")
-        val elements = record.callMethod<List<*>>("getElements")
-        for (element in elements) {
-            if (element == null) continue
-            val ark = runCatching { element.callMethod<Any>("getArkElement") }.getOrNull() ?: continue
-            val data = runCatching { ark.callMethod<String>("getBytesData") }.getOrNull()
-            if (!data.isNullOrBlank()) return data
-        }
-        return null
-    }
-
-    private fun openCard(activity: Activity, data: String) {
-        val matched = rules().mapNotNull { rule ->
+    private fun matchingRules(data: String): List<Pair<AppRule, String>> = rules().mapNotNull { rule ->
             val result = runCatching { Regex(rule.pattern).find(data) }.getOrNull() ?: return@mapNotNull null
             val url = result.value.replace("\\/", "/").replace("&amp;", "&")
             if (!url.startsWith("http://") && !url.startsWith("https://")) return@mapNotNull null
             rule to url
         }
-        if (matched.isEmpty()) {
-            ToastTool.show("卡片中没有匹配的链接")
-            return
-        }
+
+    private fun openCard(activity: Activity, matched: List<Pair<AppRule, String>>) {
         Thread {
             val candidates = matched.map { (rule, url) ->
                 val resolved = if (rule.resolveShortUrl && Uri.parse(url).host == "b23.tv") {

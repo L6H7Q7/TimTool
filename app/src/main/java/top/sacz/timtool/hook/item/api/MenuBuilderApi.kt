@@ -22,7 +22,7 @@ class MenuBuilderApi : ApiHookItem() {
          */
         @JvmStatic
         fun register(hookItem: OnMenuBuilder) {
-            decorators.add(hookItem)
+            if (decorators.none { it === hookItem }) decorators.add(hookItem)
         }
     }
 

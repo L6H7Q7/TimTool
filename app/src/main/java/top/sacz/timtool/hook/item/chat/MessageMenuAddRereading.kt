@@ -17,12 +17,22 @@ class MessageMenuAddRereading : BaseSwitchFunctionHookItem(), OnMenuBuilder {
     }
 
     override fun onGetMenu(aioMsgItem: Any, targetType: String, param: XC_MethodHook.MethodHookParam) {
+        val existing = param.result as? List<*> ?: return
+        if (existing.any { menuItem ->
+                menuItem != null && listOf("f", "e").any { name ->
+                    runCatching {
+                        menuItem.javaClass.methods.firstOrNull {
+                            it.name == name && it.parameterCount == 0
+                        }?.invoke(menuItem)?.toString() == "复读"
+                    }.getOrDefault(false)
+                }
+            }) return
         val item = QQCustomMenu.createMenuItem(aioMsgItem, "复读", R.id.item_msg_repeat, R.drawable.repeat) {
             val msgRecord = aioMsgItem.callMethod<Any>("getMsgRecord")
             val listener = RereadingMessageClickListener(msgRecord, ContactUtils.getCurrentContact())
             listener.rereading()
         }
-        param.result = listOf(item) + param.result as List<*>
+        param.result = listOf(item) + existing
     }
 
 }

@@ -1,4 +1,4 @@
-# TimTool 3.3 custom v3.4
+# TimTool 3.3 custom v3.5
 
 This fork is based on TimTool 3.3 and adds a card-to-app action inspired by
 [QAuxiliary](https://github.com/cinit/QAuxiliary). It is a custom build, not an
@@ -25,7 +25,12 @@ official TimTool release.
 - Adds **表情面板只显示收藏**: opening TIM's chat emoticon panel selects the
   native favorite page and hides its bottom tab strip. This is independent of
   TimTool's long-press custom sticker panel.
-- Displays module version `3.3-custom-v3.4` (`versionCode` 38).
+- Opens matching Ark share cards in a configured app on a short tap. The
+  long-press **打开** menu item is removed; long presses and unmatched cards keep
+  TIM's original behavior.
+- Prevents duplicate **复读** long-press menu items when TIM or another menu
+  callback already provides one.
+- Displays module version `3.3-custom-v3.5` (`versionCode` 39).
 
 Build the module with `gradlew :app:assembleDebug` using the Android SDK required
 by this project. The TIM 4.1.0 APK with an embedded module is distributed
