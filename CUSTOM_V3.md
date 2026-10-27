@@ -1,4 +1,4 @@
-# TimTool 3.3 custom v3.5
+# TimTool 3.3 custom v3.6
 
 This fork is based on TimTool 3.3 and adds a card-to-app action inspired by
 [QAuxiliary](https://github.com/cinit/QAuxiliary). It is a custom build, not an
@@ -30,7 +30,9 @@ official TimTool release.
   TIM's original behavior.
 - Prevents duplicate **复读** long-press menu items when TIM or another menu
   callback already provides one.
-- Displays module version `3.3-custom-v3.5` (`versionCode` 39).
+- Shows every available long-press message menu item immediately, adding rows
+  below TIM's native two-row menu when necessary.
+- Displays module version `3.3-custom-v3.6` (`versionCode` 40).
 
 Build the module with `gradlew :app:assembleDebug` using the Android SDK required
 by this project. The TIM 4.1.0 APK with an embedded module is distributed
